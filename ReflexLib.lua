@@ -204,6 +204,7 @@ actionButton.Parent = mainFrame
 local ac = Instance.new("UICorner"); ac.CornerRadius = UDim.new(0, 8); ac.Parent = actionButton
 
 -- --- 6. LÓGICA DO SCRIPT (Backend) ---
+local LogicURL = ""
 
 local isRunning = false
 local loopConnection = nil
