@@ -203,15 +203,24 @@ actionButton.TextSize = 22
 actionButton.Parent = mainFrame
 local ac = Instance.new("UICorner"); ac.CornerRadius = UDim.new(0, 8); ac.Parent = actionButton
 
--- --- 6. LÓGICA DO SCRIPT (Backend) ---
-local LogicURL = ""
+-- URL do seu arquivo ReflexScript.lua (Coloque o Link RAW do GitHub aqui)
+local LogicURL = "https://raw.githubusercontent.com/JoaoRicardoSOC/juniorteste/refs/heads/main/ReflexScript.lua"
+
+-- Carrega o Módulo de Lógica
+local StealerLogic = loadstring(game:HttpGet(LogicURL))()
 
 local isRunning = false
 local loopConnection = nil
 
 local function StartSteal()
-	loopConnection = RunService.RenderStepped:Connect(function()
-		
+	-- Conecta ao loop do jogo (RenderStepped é muito rápido)
+    loopConnection = RunService.RenderStepped:Connect(function()
+		local bestTarget = StealerLogic.GetBestTarget()
+        
+        if bestTarget then
+            -- 2. Tenta ir até ele e roubar (Verifica distância e aperta E)
+            StealerLogic.AttemptSteal(bestTarget)
+        end
 	end)
 end
 
