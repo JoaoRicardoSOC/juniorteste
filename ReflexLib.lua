@@ -213,6 +213,7 @@ local isRunning = false
 local loopConnection = nil
 
 local function StartSteal()
+	print(">>> [REFLEX HUB] Auto Steal Iniciado")
 	-- Conecta ao loop do jogo (RenderStepped é muito rápido)
     loopConnection = RunService.RenderStepped:Connect(function()
 		local bestTarget = StealerLogic.GetBestTarget()
