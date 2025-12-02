@@ -1,6 +1,6 @@
 --[[ 
-    Junior Hub - Stealer GUI (Versão Final Completa)
-    - Tema: Ciano (Junior Hub)
+    Reflex Hub - Stealer GUI (Versão Final Completa)
+    - Tema: Ciano (Reflex Hub)
     - Funcionalidades: Arrastar, Redimensionar, Minimizar (Animado) e Lógica de Steal.
 ]]
 
@@ -20,13 +20,13 @@ local Theme = {
 }
 
 -- Evita janelas duplicadas na tela
-if CoreGui:FindFirstChild("JuniorHubFixed") then
-	CoreGui.JuniorHubFixed:Destroy()
+if CoreGui:FindFirstChild("ReflexHub") then
+	CoreGui.ReflexHub:Destroy()
 end
 
 -- --- 1. JANELA PRINCIPAL ---
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "JuniorHubFixed"
+screenGui.Name = "ReflexHub"
 -- Tenta colocar no CoreGui (Exploits), se falhar vai pro PlayerGui
 pcall(function() screenGui.Parent = CoreGui end)
 if not screenGui.Parent then screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
@@ -46,7 +46,7 @@ local stroke = Instance.new("UIStroke"); stroke.Color = Theme.Accent; stroke.Thi
 
 -- --- 2. TÍTULO E BOTÕES DE JANELA ---
 local title = Instance.new("TextLabel")
-title.Text = "🔹 Junior Hub | Stealer"
+title.Text = "🔹 Reflex Hub | Stealer"
 title.Size = UDim2.new(1, -100, 0, Theme.HeaderHeight)
 title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
@@ -209,16 +209,12 @@ local isRunning = false
 local loopConnection = nil
 
 local function StartSteal()
-	print(">>> [JUNIOR HUB] Iniciando sistema de roubo...")
-	
 	loopConnection = RunService.RenderStepped:Connect(function()
-		-- [[ AQUI VAI SEU CÓDIGO DE DETECÇÃO DE BRAINROT ]] --
-		-- Exemplo: Encontrar item, verificar valor, teleportar ou interagir
+		
 	end)
 end
 
 local function StopSteal()
-	print(">>> [JUNIOR HUB] Sistema parado.")
 	if loopConnection then 
 		loopConnection:Disconnect() 
 		loopConnection = nil 
