@@ -203,49 +203,49 @@ actionButton.TextSize = 22
 actionButton.Parent = mainFrame
 local ac = Instance.new("UICorner"); ac.CornerRadius = UDim.new(0, 8); ac.Parent = actionButton
 
--- URL do seu arquivo ReflexScript.lua (Coloque o Link RAW do GitHub aqui)
-local LogicURL = "https://raw.githubusercontent.com/JoaoRicardoSOC/juniorteste/refs/heads/main/ReflexScript.lua"
+-- --- 6. CONEXÃO COM A LÓGICA (Backend) ---
 
--- Carrega o Módulo de Lógica
+local LogicURL = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/ReflexScript.lua"
 local StealerLogic = loadstring(game:HttpGet(LogicURL))()
 
 local isRunning = false
 local loopConnection = nil
 
 local function StartSteal()
-	print(">>> [REFLEX HUB] Auto Steal Iniciado")
-	-- Conecta ao loop do jogo (RenderStepped é muito rápido)
+    print(">>> [REFLEX HUB] Auto-Collect Iniciado (Sem Teleporte)")
+    
     loopConnection = RunService.RenderStepped:Connect(function()
-		local bestTarget = StealerLogic.GetBestTarget()
+        -- 1. Calcula e ILUMINA o melhor alvo
+        local target = StealerLogic.GetBestTarget()
         
-        if bestTarget then
-            -- 2. Tenta ir até ele e roubar (Verifica distância e aperta E)
-            StealerLogic.AttemptSteal(bestTarget)
+        -- 2. Se houver um alvo, verifica se você chegou perto dele
+        if target then
+            StealerLogic.AttemptSteal(target)
         end
-	end)
+    end)
 end
 
 local function StopSteal()
-	if loopConnection then 
-		loopConnection:Disconnect() 
-		loopConnection = nil 
-	end
+    print(">>> [REFLEX HUB] Parado.")
+    if loopConnection then 
+        loopConnection:Disconnect() 
+        loopConnection = nil 
+    end
+    -- Remove o brilho (ESP) do último item quando desliga
+    if StealerLogic.HighlightTarget then StealerLogic.HighlightTarget(nil) end
 end
 
+-- Conexão do Botão
 actionButton.MouseButton1Click:Connect(function()
-	if not isRunning then
-		-- LIGAR
-		isRunning = true
-		actionButton.Text = "Desativar Stealer"
-		-- Animação para Vermelho
-		TweenService:Create(actionButton, TweenInfo.new(0.3), {BackgroundColor3 = Theme.Red, TextColor3 = Theme.TextMain}):Play()
-		StartSteal()
-	else
-		-- DESLIGAR
-		isRunning = false
-		actionButton.Text = "Ativar Stealer"
-		-- Animação volta para Ciano
-		TweenService:Create(actionButton, TweenInfo.new(0.3), {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.fromRGB(20,20,20)}):Play()
-		StopSteal()
-	end
+    if not isRunning then
+        isRunning = true
+        actionButton.Text = "Desativar Stealer"
+        TweenService:Create(actionButton, TweenInfo.new(0.3), {BackgroundColor3 = Theme.Red, TextColor3 = Theme.TextMain}):Play()
+        StartSteal()
+    else
+        isRunning = false
+        actionButton.Text = "Ativar Stealer"
+        TweenService:Create(actionButton, TweenInfo.new(0.3), {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.fromRGB(20,20,20)}):Play()
+        StopSteal()
+    end
 end)

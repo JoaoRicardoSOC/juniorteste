@@ -1,7 +1,13 @@
+--[[
+    ReflexScript.lua (Versão Legit / No-Teleport)
+    - Calcula o melhor item.
+    - Destaca o item visualmente (ESP).
+    - Coleta automaticamente apenas se você estiver perto.
+]]
+
 local Logic = {}
 
--- [[ 1. CONFIGURAÇÃO DE PESOS (INTELIGÊNCIA) ]]
--- Define o que é mais importante. O número maior ganha.
+-- 1. Pesos de Raridade
 Logic.RarityWeights = {
     ["Common"]        = 1,
     ["Uncommon"]      = 2,
@@ -11,26 +17,24 @@ Logic.RarityWeights = {
     ["Mythical"]      = 500,
     ["Brainrot God"]  = 1000,
     ["Admin"]         = 5000, 
-    ["Taco"]          = 5000, -- Nível alto
-    ["Secret"]        = 10000, -- Topo
-    ["OG"]            = 10000  -- Topo
+    ["Taco"]          = 5000, 
+    ["Secret"]        = 10000,
+    ["OG"]            = 10000
 }
 
--- Pasta onde o script vai procurar os itens
-Logic.Folder = workspace:WaitForChild("Brainrots", 2) or workspace
+Logic.Folder = workspace:WaitForChild("Brainrots", 5) or workspace
 
--- [[ 2. SISTEMA DE LEITURA (SCANNER) ]]
--- Tenta encontrar a raridade e valor em vários lugares possíveis
+-- Variável para controlar o destaque visual anterior (para apagar quando mudar de alvo)
+local currentHighlight = nil
+
+-- Função Scanner (Lê raridade e valor)
 function Logic.GetItemData(item)
-    local rarity = "Common" -- Padrão se não achar nada
+    local rarity = "Common"
     local value = 0
-
-    -- Lista de nomes comuns que devs usam para raridade
+    
     local rarityNames = {"Rarity", "Raridade", "Tier", "Rank"}
-    -- Lista de nomes comuns para valor
     local valueNames = {"Value", "Valor", "Price", "Cost"}
 
-    -- Função auxiliar para buscar dentro de um objeto
     local function searchIn(parent)
         for _, name in pairs(rarityNames) do
             if parent:FindFirstChild(name) then rarity = parent[name].Value break end
@@ -40,83 +44,92 @@ function Logic.GetItemData(item)
         end
     end
 
-    -- 1. Procura direto no Item
     searchIn(item)
-    -- 2. Procura numa pasta 'Config' ou 'Configuration' (Muito comum)
     if item:FindFirstChild("Config") then searchIn(item.Config) end
     if item:FindFirstChild("Configuration") then searchIn(item.Configuration) end
-    -- 3. Procura em Atributos (Sistema novo do Roblox)
     if item:GetAttribute("Rarity") then rarity = item:GetAttribute("Rarity") end
     if item:GetAttribute("Value") then value = item:GetAttribute("Value") end
 
     return rarity, value
 end
 
--- [[ 3. CÁLCULO DO MELHOR ALVO ]]
+-- Função para Destacar o Alvo (ESP)
+-- Faz o item brilhar para você saber onde ir
+function Logic.HighlightTarget(target)
+    if not target then 
+        if currentHighlight then currentHighlight:Destroy() currentHighlight = nil end
+        return 
+    end
+
+    -- Se já estamos destacando este mesmo item, não faz nada
+    if currentHighlight and currentHighlight.Parent == target then return end
+
+    -- Remove destaque do item anterior
+    if currentHighlight then currentHighlight:Destroy() end
+
+    -- Cria novo destaque
+    local hl = Instance.new("Highlight")
+    hl.Name = "ReflexESP"
+    hl.FillColor = Color3.fromRGB(0, 255, 255) -- Ciano
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 0.5
+    hl.OutlineTransparency = 0
+    hl.Parent = target
+    currentHighlight = hl
+end
+
+-- Função Lógica Principal
 function Logic.GetBestTarget()
     local bestItem = nil
     local highestScore = -1 
     
-    for _, item in pairs(Logic.Folder:GetChildren()) do
-        -- Verifica se o item é um Modelo e tem uma parte física (PrimaryPart ou HumanoidRootPart)
-        local root = item.PrimaryPart or item:FindFirstChild("HumanoidRootPart") or item:FindFirstChild("Main")
-        
-        if root then
-            -- Lê os dados usando o scanner inteligente
-            local rarityName, itemValue = Logic.GetItemData(item)
-            
-            -- Pega o peso da tabela (se não existir, usa 0)
-            local weight = Logic.RarityWeights[rarityName] or 0
-            
-            -- [[ FÓRMULA MÁGICA ]]
-            -- Peso * 1 Milhão + Valor.
-            -- Isso garante que uma raridade maior SEMPRE ganhe de dinheiro.
-            local score = (weight * 1000000) + itemValue
+    if not Logic.Folder then return nil end
 
-            if score > highestScore then
-                highestScore = score
-                bestItem = item
+    for _, item in pairs(Logic.Folder:GetChildren()) do
+        if item:IsA("Model") then
+            local root = item.PrimaryPart or item:FindFirstChild("HumanoidRootPart") or item:FindFirstChild("Main")
+            if root then
+                local rarityName, itemValue = Logic.GetItemData(item)
+                local weight = Logic.RarityWeights[rarityName] or 0
+                local score = (weight * 1000000) + itemValue
+
+                if score > highestScore then
+                    highestScore = score
+                    bestItem = item
+                end
             end
         end
     end
+    
+    -- Chama o ESP para mostrar o vencedor
+    Logic.HighlightTarget(bestItem)
+    
     return bestItem
 end
 
--- [[ 4. VERIFICAÇÃO DE ALCANCE E ROUBO ]]
+-- Função de Roubo (SEM TELEPORTE)
 function Logic.AttemptSteal(target)
-    local Player = game.Players.LocalPlayer
-    local Character = Player.Character
-    
-    if not target or not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
+    local Character = game.Players.LocalPlayer.Character
+    if not target or not Character then return end
 
     local rootPart = target.PrimaryPart or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Main")
     if not rootPart then return end
 
-    -- A. TELEPORTE (Mover até o item)
-    -- Teleporta para o CFrame do item
-    Character.HumanoidRootPart.CFrame = rootPart.CFrame
-    
-    -- B. INTERAÇÃO (Apertar o botão)
-    -- Procura o ProximityPrompt (o botão "E") dentro do item
+    -- 1. Verifica se tem Prompt (Botão E)
     local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
     
-    if prompt then
-        -- Verifica se o Prompt está ativado
-        if prompt.Enabled then
-            -- Verifica distância: Só tenta pegar se estiver dentro do alcance permitido pelo jogo
-            local distance = (Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
-            
-            -- Se a distância for menor que o alcance máximo do prompt (com uma margem de erro)
-            if distance <= prompt.MaxActivationDistance + 2 then
-                -- DISPARA O PROMPT (Roubo)
-                fireproximityprompt(prompt)
-                return true -- Sucesso
-            end
+    if prompt and prompt.Enabled then
+        -- 2. Verifica a distância MANUALMENTE
+        local distance = (Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
+        
+        -- Se você estiver perto o suficiente (MaxDistance do jogo + margem)
+        if distance <= prompt.MaxActivationDistance then
+            print("[REFLEX] Item no alcance! Coletando: " .. target.Name)
+            fireproximityprompt(prompt)
+            return true
         end
-    else
-        -- Caso o jogo não use Prompt (seja por toque), o teleporte acima já resolve.
-        -- Opcional: Mover o item para o jogador (Client-sided visual, as vezes server sided em jogos ruins)
     end
+    
     return false
 end
 
